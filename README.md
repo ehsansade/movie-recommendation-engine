@@ -26,5 +26,7 @@ The next steps for generating recommendation are:
 
 8- Generate content similarity value for each selected movie based on genres and crew ( casts, directors) similarities
 
-9-Sort the top 50 of our list based on content similartiy, rating value, and rating size, and choose the top 10 as the final selection
+9-Sort the top 50 of our list based on content similarity, rating value, and rating size, and choose the top 10 as the final selection
+
+If you try the code, I would appreciate your feedback at https://www.surveymonkey.com/r/HJ9N5MP
 
