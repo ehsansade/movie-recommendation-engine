@@ -21,35 +21,27 @@ ratings['year'] = ratings.year.str.split(')').str.get(0)
 ratings=ratings[['userId','movieId','rating','title','year']]
 ratings['year'] = ratings['year'].astype(str)
 ratings['year'] = ratings['year'].convert_objects(convert_numeric=True)
-
-#new_ratings=ratings[ratings['year']>2004]
+# if you want ot consider certain years, e.g. year>2000, you can filter and assign it to new_ratings
 new_ratings=ratings
-#new_ratings =new_ratings [new_ratings['rating'] != 3]
 
-# Encode 4s and 5s as 1 (rated positively)
-# Encode 1s and 2s as 0 (rated poorly)
 new_ratings['rating'] = np.where(new_ratings['rating'] > 3, 1, 0)
 movie_list=new_ratings.groupby('movieId').head(1)
-#movie_list.to_csv('movie_list.csv', index=False, header=True)
+
 positive_ratings=new_ratings[new_ratings['rating']==1]
 movie_list2=positive_ratings.groupby('movieId').head(1)
-#movie_list2.to_csv('movie_list2.csv', index=False, header=True)
 
-movie_title=['Mr. Nobody (2009)','Truman Show, The (1998)','Gone with the Wind (1939)']
+movie_title=['Mr. Nobody (2009)','Truman Show, The (1998)','Gladiator (2000)']
 similar_users=positive_ratings[positive_ratings['title']==movie_title[0]]
 similar_users1=positive_ratings[positive_ratings['userId'].isin(similar_users['userId'])]
 similar_users=similar_users1[similar_users1['title']==movie_title[1]]
 similar_users2=similar_users1[similar_users1['userId'].isin(similar_users['userId'])]
 similar_users=similar_users2[similar_users2['title']==movie_title[2]]
-#similar_users=similar_users2[similar_users2['userId'].isin(similar_users['userId'])]
 
 similar_movies=new_ratings[new_ratings['userId'].isin(similar_users['userId'])]
-#similar_movies=similar_movies[~similar_movies['title'].isin(movie_title)]
 recom_movies=similar_movies.groupby('title',as_index=False).agg({'rating': [np.size, np.mean]})
 
 min_size= max(recom_movies[~recom_movies['title'].isin(movie_title)][('rating','size')])*0.35
 recom_movies=recom_movies[(recom_movies[('rating','size')]>min_size) &(recom_movies[('rating','mean')]>.8)]
-#recom_movies['title']=recom_movies.index
 
 recom_movies=pd.merge(recom_movies,dg,on='title')
 
@@ -155,9 +147,6 @@ for i in range(len(new_list)):
     new_list.loc[i,'content_similarity']=genre_similarity+1.5*crew_similarity
     
 new_list=new_list.reset_index(drop=True).sort_values([('rating','mean')], ascending=False)
-    
-list1=new_list.head(20).sort_values(['content_similarity',('rating','mean'),('rating','size')],ascending=[False,False,False]).head(10)
-list2=new_list.head(30).sort_values(['content_similarity',('rating','mean'),('rating','size')],ascending=[False,False,False]).head(10)
-list3=new_list.head(50).sort_values(['content_similarity',('rating','mean'),('rating','size')],ascending=[False,False,False]).head(10)
-list4=new_list.head(100).sort_values(['content_similarity',('rating','mean'),('rating','size')],ascending=[False,False,False]).head(10)
-# best recommenders list2, 3
+
+recom_list=new_list.head(50).sort_values(['content_similarity',('rating','mean'),('rating','size')],ascending=[False,False,False]).head(10)
+
