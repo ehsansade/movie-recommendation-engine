@@ -2,4 +2,4 @@ Here is the link for rating and other movie related data that has been used in t
 
 https://grouplens.org/datasets/movielens/latest/
 
-I used the full dataset.
+I used the full dataset. The files that you need are "ratings", "movies", and "links".
