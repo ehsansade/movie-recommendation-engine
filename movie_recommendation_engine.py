@@ -15,7 +15,7 @@ dg = pd.read_csv('C:/Users/ehsan/python work/ml-latest/movies.csv', sep=',')
 
 ratings=pd.merge(df,dg)
 
-ratings['year'] = ratings.title.str.split('(').str.get(1) 
+ratings['year'] = ratings.title.str.split('(').str.get(-1) 
 ratings['year'] = ratings.year.str.split(')').str.get(0)
 
 ratings=ratings[['userId','movieId','rating','title','year']]
