@@ -20,8 +20,15 @@ ratings['year'] = ratings.year.str.split(')').str.get(0)
 
 ratings=ratings[['userId','movieId','rating','title','year']]
 ratings['year'] = ratings['year'].astype(str)
-ratings['year'] = ratings['year'].convert_objects(convert_numeric=True)
+ratings=ratings[ratings['year'].map(len)==4]
+ratings=ratings[ratings['year']!='Viva']
+ratings=ratings[ratings['year']!='Wall']
+ratings=ratings[ratings['year']!='Mara']
+ratings=ratings[ratings['year']!='Fant']
+ratings=ratings[ratings['year']!='Zero']
+ratings['year'] = ratings['year'].astype(int)
 # if you want ot consider certain years, e.g. year>2000, you can filter and assign it to new_ratings
+#new_ratings=ratings[ratings['year']>1995]
 new_ratings=ratings
 
 new_ratings['rating'] = np.where(new_ratings['rating'] > 3, 1, 0)
@@ -30,7 +37,22 @@ movie_list=new_ratings.groupby('movieId').head(1)
 positive_ratings=new_ratings[new_ratings['rating']==1]
 movie_list2=positive_ratings.groupby('movieId').head(1)
 
-movie_title=['Mr. Nobody (2009)','Truman Show, The (1998)','Gladiator (2000)']
+# list of 3 favorite movies and locating them in the database
+print('Enter name of three favourite movie, seperated by comma')
+movie_names=input()
+print('Enter year of three favourite movie, seperated by comma')
+movie_years=input()
+movie_name_database=new_ratings.groupby('title').head(1)
+movie_names=movie_names.split(',')
+movie_years=movie_years.split(',')
+a0=movie_name_database.loc[movie_name_database.title.str.contains(movie_names[0])]
+a1=movie_name_database.loc[movie_name_database.title.str.contains(movie_names[1])]
+a2=movie_name_database.loc[movie_name_database.title.str.contains(movie_names[2])]
+a0=a0[a0.year==int(movie_years[0])]
+a1=a1[a1.year==int(movie_years[1])]
+a2=a2[a2.year==int(movie_years[2])]
+movie_title=list(a0.title)+list(a1.title)+list(a2.title)
+###
 similar_users=positive_ratings[positive_ratings['title']==movie_title[0]]
 similar_users1=positive_ratings[positive_ratings['userId'].isin(similar_users['userId'])]
 similar_users=similar_users1[similar_users1['title']==movie_title[1]]
@@ -40,8 +62,8 @@ similar_users=similar_users2[similar_users2['title']==movie_title[2]]
 similar_movies=new_ratings[new_ratings['userId'].isin(similar_users['userId'])]
 recom_movies=similar_movies.groupby('title',as_index=False).agg({'rating': [np.size, np.mean]})
 
-min_size= max(recom_movies[~recom_movies['title'].isin(movie_title)][('rating','size')])*0.35
-recom_movies=recom_movies[(recom_movies[('rating','size')]>min_size) &(recom_movies[('rating','mean')]>.8)]
+min_size= max(recom_movies[~recom_movies['title'].isin(movie_title)][('rating','size')])*0.3
+recom_movies=recom_movies[(recom_movies[('rating','size')]>min_size) &(recom_movies[('rating','mean')]>.75)]
 
 recom_movies=pd.merge(recom_movies,dg,on='title')
 
@@ -54,31 +76,35 @@ dlink = pd.read_csv('C:/Users/ehsan/python work/ml-latest/links.csv', sep=',')
 
 newdf=pd.merge(newdf,dlink)
 
+# Similarity in directors and main casts
 for i in range(len(recom_movies)):
-    url='http://www.imdb.com/title/tt0%s/' % newdf['imdbId'][i]
+    url='http://www.imdb.com/title/tt%s/' % newdf['imdbId'][i]+'fullcredits'
+
     page = requests.get(url)
-    tree = html.fromstring(page.content)
-    cast = tree.xpath('//*[@id="title-overview-widget"]/div[3]/div[1]/div[4]/span/a/span/text()')
-    if cast==[]:
-        cast = tree.xpath('//*[@id="title-overview-widget"]/div[3]/div[2]/div[1]/div[4]/span/a/span/text()') 
+    if page:
+        list_tables = pd.read_html(page.content)
+    else:
+        url='http://www.imdb.com/title/tt0%s/' % newdf['imdbId'][i]+'fullcredits'
+        page = requests.get(url)
+        if page:
+            
+            list_tables = pd.read_html(page.content)
+        else:
+            break
     
-    director = tree.xpath('//*[@id="title-overview-widget"]/div[3]/div[1]/div[2]/span/a/span/text()')
-    if director==[]:
-        director = tree.xpath('//*[@id="title-overview-widget"]/div[3]/div[2]/div[1]/div[2]/span/a/span/text()')
-    if cast==[]:
-        cast=tree.xpath('//*[@id="title-overview-widget"]/div[3]/div[2]/div[1]/div[2]/span/a/span/text()')
-        director=[]
-    #movie_list['director'][i]=director
-    if len(cast)>0:
-        newdf.loc[i,'cast1']=cast[0]
-    if len(cast)>1:
-        newdf.loc[i,'cast2']=cast[1]
-    if len(cast)>2:
-        newdf.loc[i,'cast3']=cast[2]
-    if len(director)>0:
-        newdf.loc[i,'director']=director[0]
-    if len(director)>1:
-        newdf.loc[i,'director2']=director[1]
+    
+    newdf.loc[i,'cast1']=list_tables[2][1][1]
+    
+    newdf.loc[i,'cast2']=list_tables[2][1][2]
+    
+    newdf.loc[i,'cast3']=list_tables[2][1][3]
+    
+    newdf.loc[i,'director']=list_tables[0][0][0]
+    
+    
+    if len(list_tables[0][0])>1:
+        
+        newdf.loc[i,'director2']=list_tables[0][0][1]
 
 new_list=newdf[~newdf['title'].isin(movie_title)]
 new_list=new_list.reset_index(drop=True).sort_values([('rating','mean')], ascending=False)
@@ -145,8 +171,10 @@ for i in range(len(new_list)):
             genre_similarity=genre_similarity+1
     new_list.loc[i,'genre_similarity']=genre_similarity
     new_list.loc[i,'content_similarity']=genre_similarity+1.5*crew_similarity
+   # the weighting for crew similarity can be changed here
     
 new_list=new_list.reset_index(drop=True).sort_values([('rating','mean')], ascending=False)
 
 recom_list=new_list.head(50).sort_values(['content_similarity',('rating','mean'),('rating','size')],ascending=[False,False,False]).head(10)
+Print(recom_list)
 
