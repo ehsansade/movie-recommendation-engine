@@ -1,9 +1,11 @@
 # movie-recommendation-engine
 The objective is to generate a list of movie recommendations based on a person's movies of interest and their contents.
 
-I used complete set of MovieLens data, which included all movies until 2017.
+I used complete set of MovieLens data, which included all movies until 2019.
 
 The first step is to read the movie data as dataframes, and extract the year from the titles.
+
+The next step, the year of movies were extracted from the title and the movies with different title format were removed.
 
 In the next step, I converted the rating values from [0,0.5,1,..,4.5,5] to [0,1], where the ratings higher than 3 get value of 1 and the rest gets 0, with the aim to emphasize positive ratings.
 
@@ -17,7 +19,7 @@ The next steps for generating recommendation are:
 
 3- Aggreagte movies based on number of ratings and mean value of ratings, and genrate a movie list
 
-4- Select a portion of the generated movie list based on  0.35* max(number of ratings)< number of ratings < max(number of ratings)
+4- Select a portion of the generated movie list based on  0.3* max(number of ratings)< number of ratings < max(number of ratings)
 
 5- Sort movies based on their mean value of ratings
 
